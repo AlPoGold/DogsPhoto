@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">DogsPhoto</string>
+    <string name="name_app">DOG IMAGE</string>
+    <string name="next_image_btn">NEXT IMAGE</string>
+    <string name="dog_photo_descr">dog photo</string>
 </resources>

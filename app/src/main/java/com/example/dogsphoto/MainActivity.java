@@ -1,9 +1,20 @@
 package com.example.dogsphoto;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
+
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -15,34 +26,69 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class MainActivity extends AppCompatActivity {
     public static final String BASE_URL = "https://dog.ceo/api/breeds/image/random";
+    public static final String ERROR_MSG = "It is impossible to show data";
+    private MainViewModel mainViewModel;
+    private static final String LOG_MAIN = "MainActivity";
+
+    Button nextImageBtn;
+    ImageView ivImageDog;
+    ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        loadImage();
-    }
+        initViews();
 
-    private void loadImage(){
+        mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
+        mainViewModel.loadImage();
 
-        Thread thread = new Thread(new Runnable() {
+        mainViewModel.getDogImage().observe(this, new Observer<DogImage>() {
             @Override
-            public void run() {
-                try {
-                    URL url = new URL(BASE_URL);
-                    HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-                    InputStream inputStream = urlConnection.getInputStream();
-                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                    String result = bufferedReader.readLine();
-                    Log.d("MainActivity", result);
-                } catch (Exception e) {
-                    Log.d("MainActivity", e.toString());
+            public void onChanged(DogImage image) {
+                Glide.with(MainActivity.this)
+                        .load(image.getMessage())
+                        .into(ivImageDog);
+
+                Log.d("mainviewmodel", "set image");
+            }
+        });
+
+        mainViewModel.getIsLoading().observe(this, new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean loading) {
+                if(loading){
+                    progressBar.setVisibility(View.VISIBLE);
+                }else{
+                    progressBar.setVisibility(View.INVISIBLE);
+                }
+
+            }
+        });
+
+        mainViewModel.getIsHavingNet().observe(this, new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean isHavingNet) {
+                if(!isHavingNet){
+                    Toast.makeText(MainActivity.this, ERROR_MSG, Toast.LENGTH_SHORT).show();
                 }
             }
         });
-        thread.start();
 
-
+        nextImageBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d("mainactivity", "button is pressed");
+                mainViewModel.loadImage();
+            }
+        });
     }
+
+    private void initViews(){
+        nextImageBtn = findViewById(R.id.btnNextImage);
+        ivImageDog = findViewById(R.id.imageDog);
+        progressBar = findViewById(R.id.progressBar);
+    }
+
+
 }
